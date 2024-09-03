@@ -1,11 +1,23 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from contextlib import asynccontextmanager
+from sqlalchemy.orm import Session
 
 from logger import logger
-from services.ddragon_service import DDragonService
+from services import ddragon_service
+from database.database_config import engine, get_db
+from database.models import Champion, Base
 
-app = FastAPI()
-ddragon_service = DDragonService()
+Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def startup_event(app: FastAPI):
+    logger.info("Starting the FastAPI application. Initiating DDragon information...")
+    await ddragon_service.initiate_ddragon_information()
+    yield
+    logger.info("Finishing API...")
+
+app = FastAPI(lifespan=startup_event)
 
 @app.get("/")
 def root():
@@ -19,6 +31,10 @@ def version():
 def champions():
     return ddragon_service.get_champions_list()
 
+@app.get("/champion/{champion_name}")
+async def get_champion(champion_name, db: Session = Depends(get_db)):
+    champion = db.query(Champion).filter(Champion.name == champion_name).first()
+    return champion
+
 if __name__ == "__main__":
-    logger.info("Starting the FastAPI application")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
