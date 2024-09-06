@@ -1,4 +1,4 @@
-import requests
+import requests, tarfile, os
 from sqlalchemy.orm import Session
 
 from logger import logger
@@ -79,6 +79,41 @@ async def insert_skin_info_database(skins_info: list[Skin]):
     except Exception as e:
         raise Exception(f"An error occurred while inserting the champions list into database: {e}")
     
+def download_ddragon_file(ddragon_url, ddragon_file_tgz):
+    try:
+        if os.path.exists(ddragon_file_tgz):
+            logger.info(f"File {ddragon_file_tgz} already exists!")
+            return
+
+        logger.info(f"Downloading file {ddragon_url}...")
+        response = requests.get(ddragon_url, stream=True)
+
+        os.makedirs(os.path.dirname(ddragon_file_tgz), exist_ok=True)
+
+        with open(ddragon_file_tgz, "wb") as file:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    file.write(chunk)
+        logger.info(f"File downloaded at: {ddragon_file_tgz}")
+    except Exception as e:
+        raise Exception(f"An error occurred while downloading the ddragon files: {e}")
+
+def extract_tar_file(tgz_file, folder_to_extract, output_dir):
+    try:
+        logger.info(f"Extracting {tgz_file} to {output_dir}...")
+        with tarfile.open(tgz_file, "r:gz") as tar:
+            members = tar.getmembers()
+            for member in members:
+                if member.isreg() and member.name.__contains__(folder_to_extract):
+                    member.name = os.path.basename(member.name)
+
+                    if os.path.exists(os.path.join(output_dir, member.name)):
+                        continue
+
+                    tar.extract(member, path=output_dir)
+    except Exception as e:
+        raise Exception(f"An error occurred while extracting the ddragon files: {e}")
+    
 async def initiate_ddragon_information():
     latest_version = get_latest_package_version()
 
@@ -98,4 +133,13 @@ async def initiate_ddragon_information():
     await insert_skin_info_database(skins)
 
     logger.info(f'Database loaded successfully! All DDragon data imported.')
+    
+    logger.info(f'Getting DDragon files...')
+    
+    ddragon_url = f'{DDRAGON_DATA_URL}/dragontail-{latest_version}.tgz'
+    ddragon_tgz = f'download/{latest_version}.tgz'
 
+    download_ddragon_file(ddragon_url, ddragon_tgz)
+    extract_tar_file(ddragon_tgz, 'loading', 'static/images/skins')
+
+    logger.info(f'DDragon files downloaded!')

@@ -3,12 +3,13 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select
 
 async def get_all_champions(db: Session):
-    query = select(Champion.name, Skin.name, Skin.image)\
+    query = select(Champion.name, Skin.image)\
         .join(Champion.skins)\
         .where(Skin.name == 'default')\
         .order_by(Champion.name)
     
     champions = db.execute(query)
+    
     return champions.mappings().all()
 
 async def get_champion_by_name(champion_name, db: Session):

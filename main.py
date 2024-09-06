@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, Depends
+
 from contextlib import asynccontextmanager
 
 from logger import logger
@@ -18,10 +19,6 @@ async def startup_event(app: FastAPI):
     logger.info("Finishing API...")
 
 app = FastAPI(lifespan=startup_event)
-
-@app.get("/")
-def root():
-    return {"message": "Root!"}
 
 @app.get("/version")
 def version():
