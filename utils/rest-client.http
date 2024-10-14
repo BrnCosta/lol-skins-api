@@ -1,0 +1,20 @@
+### Variables 
+@apiurl = http://localhost:8000
+
+### GET Server version
+GET {{apiurl}}/version HTTP/1.1
+
+### GET All champions
+GET {{apiurl}}/champions HTTP/1.1
+
+### GET All skins
+GET {{apiurl}}/skins HTTP/1.1
+
+### POST goals
+POST {{apiurl}}/goals HTTP/1.1
+Content-Type: application/json
+
+{
+   "title": "Nadar",
+   "desiredWeeklyFrequency": 2
+}
