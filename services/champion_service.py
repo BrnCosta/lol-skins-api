@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select
 
 async def get_all_champions(db: Session):
-    query = select(Champion.name, Skin.image)\
+    query = select(Champion.name, Skin.id.label("default-skin"))\
         .join(Champion.skins)\
         .where(Skin.name == 'default')\
         .order_by(Champion.name)
@@ -23,5 +23,6 @@ async def get_champion_by_name(champion_name, db: Session):
 
     return {
         "name": champion.name,
-        "skins": [{"name": skin.name, "image": skin.image} for skin in champion.skins]
+        "skins": sorted([{"id": skin.id, "name": skin.name} for skin in champion.skins], 
+                    key=lambda skin: int(skin['id'].split('_')[1]))
     }

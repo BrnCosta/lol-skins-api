@@ -1,7 +1,6 @@
 import requests, tarfile, os
-from sqlalchemy.orm import Session
 
-from logger import logger
+from utils.logger import logger
 from database.models import Champion, Skin
 from database.database_config import get_db
 
@@ -45,16 +44,16 @@ def filter_champion_data(champion_data) -> tuple[list[Champion], list[Skin]]:
         champion_name = champion_data[champion_id]['name']
         skins = champion_data[champion_id]['skins']
         for skin in skins:
-            skin_object = Skin(name=skin['name'], number=skin['num'], image=f'{champion_id}_{skin['num']}', champion_name=champion_name)
+            skin_object = Skin(id=f'{champion_id}_{skin['num']}', name=skin['name'], champion_name=champion_name)
             skins_list.append(skin_object)
         champion_object = Champion(name=champion_name)
         champions_list.append(champion_object)
     return champions_list, skins_list
     
-async def verify_if_register_exists_database(entity, *register_key) -> bool:
+async def verify_if_register_exists_database(entity, register_key) -> bool:
     try:
         async for db in get_db():
-            register = db.get(entity, register_key if len(register_key) > 1 else register_key[0])
+            register = db.get(entity, register_key)
         return register is not None
     except Exception as e:
         raise Exception(f"An error occurred while verifying {register_key} in database: {e}")
@@ -73,7 +72,7 @@ async def insert_skin_info_database(skins_info: list[Skin]):
     try:
         async for db in get_db():
             for skin in skins_info:
-                if not await verify_if_register_exists_database(Skin, skin.name, skin.champion_name):
+                if not await verify_if_register_exists_database(Skin, skin.id):
                     db.add(skin)
             db.commit()
     except Exception as e:
@@ -140,6 +139,6 @@ async def initiate_ddragon_information():
     ddragon_tgz = f'download/{latest_version}.tgz'
 
     download_ddragon_file(ddragon_url, ddragon_tgz)
-    extract_tar_file(ddragon_tgz, 'loading', 'static/images/skins')
+    extract_tar_file(ddragon_tgz, 'loading', 'static/images')
 
     logger.info(f'DDragon files downloaded!')
