@@ -1,15 +1,15 @@
-from sqlalchemy import Column, ForeignKey, String, Integer
+from sqlalchemy import Column, ForeignKey, String, Boolean
 from sqlalchemy.orm import Relationship
 from database.database_config import Base
 
 class Skin(Base):
     __tablename__ = "skins"
 
-    name = Column(String, primary_key=True)
-    number = Column(Integer, nullable=False)
-    image = Column(String, nullable=False)
+    id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    owned = Column(Boolean, nullable=False, default=False)
 
-    champion_name = Column(String, ForeignKey("champions.name"), primary_key=True)
+    champion_name = Column(String, ForeignKey("champions.name"), nullable=False)
     champion = Relationship("Champion", back_populates="skins")
 
 class Champion(Base):
